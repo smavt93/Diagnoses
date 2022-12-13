@@ -2,6 +2,5 @@
 
 numpy==1.23.4
 # Editable install with no version control (pandas==1.4.4)
--e /Users/canluser/opt/anaconda3/lib/python3.9/site-packages/pandas-1.4.4-py3.9.egg-info
 streamlit==1.15.2
 pandas==1.4.4
