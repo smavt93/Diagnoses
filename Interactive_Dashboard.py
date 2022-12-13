@@ -2,15 +2,17 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from itertools import islice
+import requests
 pd.options.mode.chained_assignment = None
 
 st.title('VUMC Diagnoses')
 st.markdown('## Welcome to the VUMC Diagnoses Dashboard')
 st.markdown('- In order to get started using this quality control dashboard please upload the full Redcap data export as a .csv file in the space below.')
 data_file = st.file_uploader('Choose Data File')
-
+RC_crosswalk_url = "https://github.com/smavt93/Diagnoses/blob/main/Patient%20info%20(RC).xlsx"
 RC_crosswalk = '/Users/canluser/Library/CloudStorage/Box-Box/CANL Docs/SVT Files/Coding/Visual Studio Code/Diagnoses/Patient info (RC).xlsx'
 vumc_item_syn_file = '/Users/canluser/Library/CloudStorage/Box-Box/CANL Docs/SVT Files/Coding/Visual Studio Code/Diagnoses/VUMC RC Crosswalk.xlsx'
+vumc_item_syn_url = "https://github.com/smavt93/Diagnoses/blob/main/VUMC%20RC%20Crosswalk.xlsx"
 
 if data_file is not None:
     data_load_state = st.text('Loading data...')
@@ -21,8 +23,8 @@ if data_file is not None:
     full_db = pd.read_csv(data_file, index_col=['subject_id'])
     filtered_full_db_1 = full_db[(full_db['scid_iscomplete'] == 'Yes') & (full_db['dx1'] != 47)]
     filtered_full_db = filtered_full_db_1.iloc[:770, :]
-    vumc_item_syn_db = pd.read_excel(vumc_item_syn_file)
-    crosswalk_db = pd.read_excel(RC_crosswalk)
+    vumc_item_syn_db = pd.read_excel(vumc_item_syn_url)
+    crosswalk_db = pd.read_excel(RC_crosswalk_url)
 
 ################################################################################## Creating Lists ##############################################################################################
 
