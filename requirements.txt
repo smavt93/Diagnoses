@@ -4,3 +4,4 @@ numpy==1.23.4
 # Editable install with no version control (pandas==1.4.4)
 streamlit==1.15.2
 pandas==1.4.4
+openpyxl = 1.1.0

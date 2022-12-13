@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from itertools import islice
-import requests
 pd.options.mode.chained_assignment = None
 
 st.title('VUMC Diagnoses')
