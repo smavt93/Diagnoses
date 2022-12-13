@@ -9,10 +9,8 @@ st.title('VUMC Diagnoses')
 st.markdown('## Welcome to the VUMC Diagnoses Dashboard')
 st.markdown('- In order to get started using this quality control dashboard please upload the full Redcap data export as a .csv file in the space below.')
 data_file = st.file_uploader('Choose Data File')
-RC_crosswalk_url = "https://github.com/smavt93/Diagnoses/blob/main/Patient%20info%20(RC).xlsx"
-RC_crosswalk = '/Users/canluser/Library/CloudStorage/Box-Box/CANL Docs/SVT Files/Coding/Visual Studio Code/Diagnoses/Patient info (RC).xlsx'
-vumc_item_syn_file = '/Users/canluser/Library/CloudStorage/Box-Box/CANL Docs/SVT Files/Coding/Visual Studio Code/Diagnoses/VUMC RC Crosswalk.xlsx'
-vumc_item_syn_url = "https://github.com/smavt93/Diagnoses/blob/main/VUMC%20RC%20Crosswalk.xlsx"
+RC_crosswalk_url = "https://github.com/smavt93/Diagnoses/blob/main/Patient%20info%20(RC).xlsx?raw=true"
+vumc_item_syn_url = "https://github.com/smavt93/Diagnoses/blob/main/VUMC%20RC%20Crosswalk.xlsx?raw=true"
 
 if data_file is not None:
     data_load_state = st.text('Loading data...')
