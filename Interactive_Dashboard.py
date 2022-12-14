@@ -1,3 +1,4 @@
+from matplotlib.pyplot import axis
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -341,6 +342,7 @@ if data_file:
             st.markdown('**Rule of thumb:** The columns that have Diagnosis at the end are from the SCID and the ones without diagnosis at the end are from the Patient Information Page.')
             st.markdown('**Helpful tip:** if you want to search the DB use cmd + f if using a Mac and ctrl + f if using windows!')
             only_ids = st.checkbox('Only Discrepanct IDs?')
+            interviewers_included = st.checkbox('See Associated Interviewers?')
             if only_ids:
                 count = 0
                 subject_id_list = []
@@ -363,6 +365,26 @@ if data_file:
                 st.dataframe(joined_db.iloc[:, 21:])
                 csv = convert_df(joined_db.iloc[:, 21:])
                 st.download_button(label= 'Download Data as a CSV', data = csv, file_name = 'Full_joined_db.csv', mime= 'text/csv')
+            if interviewers_included:
+                if only_ids:
+                    count = 0
+                    subject_id_list = []
+                    columns = master_db.columns.tolist()
+                    while count < len(columns):
+                        subject_id_list.append(master_db[columns[count]].values)
+                        count += 1
+                    subject_id_list_1 = [x for x in subject_id_list if str(x) != None]
+                    flat_list = [item for sublist in subject_id_list_1 for item in sublist]
+                    cleaned_flat_list = [x for x in flat_list if x != None]
+                    only_wanted_ids = []
+                    [only_wanted_ids.append(x) for x in cleaned_flat_list if x not in only_wanted_ids]
+                    Interviewer_data = filtered_full_db.loc[only_wanted_ids, "scid_interviewername"]
+                    refined_data_2 = joined_db.loc[only_wanted_ids, :]
+                    data = pd.concat([Interviewer_data, refined_data_2.iloc[:, 21:]], axis=1)
+                    st.write('Only subjects with discrepancies and their corresponding interviewers.')
+                    st.dataframe(data)
+                    csv = convert_df(data)
+                    st.download_button(label = 'Download Data as a CSV', data = csv, file_name = 'VUMC_Discrepant_ids_and_ints.csv', mime = 'text/csv')
         with tab6:
             st.subheader('Discrepant IDs')
             st.write('This file contains a list of the subject IDs associated with discrepancies found in select syndromes. Notably one disorder was left out as there is no direct diagnosis in the interview. The syndrome is listed below.')
