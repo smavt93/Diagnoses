@@ -391,7 +391,7 @@ if data_file:
         with tab6:
             st.subheader('Discrepant IDs')
             st.write('This file contains a list of the subject IDs associated with discrepancies found in select syndromes. Notably one disorder was left out as there is no direct diagnosis in the interview. The syndrome is listed below.')
-            st.write('- Other Mood Disorder')
+            st.write('- Other Mood Disorder.')
             st.markdown('**Helpful tip:** if you want to search the DB use cmd + f if using a Mac and ctrl + f if using windows!')
             st.write(master_db)
             csv = convert_df(master_db)
