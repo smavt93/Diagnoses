@@ -168,7 +168,7 @@ if data_file is not None:
             return float(0)
         joined_db_1[syndrome_names[count]] = joined_db_1.apply(lambda row: categorise(row), axis = 1)
         count += 1
-    print(joined_db_1.columns.tolist())
+    
     ######## Creating ADHD DB ###########################
     adhd_pt_1 = joined_db_1[['ADHD-inattentive', 'ADHD-hyperactive-imoulsive', 'ADHD-combined', 'ADHD Inattention', 'ADHD Hyperactivity', 'ADHD Diagnosis']]
 
@@ -264,7 +264,7 @@ if data_file is not None:
 
     master_db = pd.DataFrame.from_dict(master_dictionary)
 else:
-    print('Please Upload a Datafile.')
+    st.write('Please Upload a Datafile.')
 
 ############################################################################### Dashboard Components #######################################################################################
 @st.cache
@@ -353,7 +353,9 @@ if data_file:
                 flat_list = [item for sublist in subject_id_list_1 for item in sublist]
                 cleaned_flat_list = [x for x in flat_list if x != None]
                 only_wanted_ids = []
-                [only_wanted_ids.append(x) for x in cleaned_flat_list if x not in only_wanted_ids]
+                for x in cleaned_flat_list:
+                    if x not in only_wanted_ids:
+                        only_wanted_ids.append(x)
                 data = joined_db.loc[only_wanted_ids, :]
                 st.write('Only subjects who have discrepancies')
                 st.dataframe(data.iloc[:, 21:])
@@ -376,7 +378,9 @@ if data_file:
                     flat_list = [item for sublist in subject_id_list_1 for item in sublist]
                     cleaned_flat_list = [x for x in flat_list if x != None]
                     only_wanted_ids = []
-                    [only_wanted_ids.append(x) for x in cleaned_flat_list if x not in only_wanted_ids]
+                    for x in cleaned_flat_list:
+                        if x not in only_wanted_ids:
+                            only_wanted_ids.append(x)
                     Interviewer_data = filtered_full_db.loc[only_wanted_ids, "scid_interviewername"]
                     refined_data_2 = joined_db.loc[only_wanted_ids, :]
                     data = pd.concat([Interviewer_data, refined_data_2.iloc[:, 21:]], axis=1)
@@ -394,7 +398,7 @@ if data_file:
             st.download_button(label = 'Download Data as a CSV', data = csv, file_name = 'Discrepant_ids.csv', mime= 'text/csv')
             st.write('Table below shows the number of subjects per disorder. If you click on the 0 you can order the list by # of subjects.')
             st.write(master_db.count())
-    specific_disorder = st.sidebar.checkbox('Would you like to look at a specific Disorder?')
+    specific_disorder = st.sidebar.checkbox('Specific Disorder')
     specific_disorder_names = master_db.columns.tolist()
     count_checkbox = 0
     master_db_columns = []
@@ -418,68 +422,182 @@ if data_file:
     direction_columns = direction_db.columns.tolist()
 
     if specific_disorder:
-        final_options = st.sidebar.selectbox(
-            'Which Syndrome would you like to look at?',
-            master_db_columns
-        )
-        for i in range (44):
-            if final_options == master_db_columns[i]:
-                st.markdown('# Data Outputs')
-                st.markdown('***')
-                st.markdown(f'## {master_db_columns[i]}')
-                st.markdown(f'Table of Subject IDs that have a discrepancy with **{master_db_columns[i]}**')
-                data = master_db[specific_disorder_names[i]].dropna(axis = 0)
-                st.write(data)
-                st.write("The number of discrepant subjects is", len(data.index))
-                csv = convert_df(data)
-                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids.csv', mime= 'text/csv')
-        interviewer = st.sidebar.checkbox('See Interviewer?')
-        if interviewer:
+        filter_type = st.sidebar.selectbox('How would you like to filter data', ['', 'Specific Disorder', 'Interviewer', 'Subject_id'])
+        if filter_type == '':
+            st.markdown('---')
+            st.markdown('## Please choose a filter criteria')
+            st.markdown('Options:')
+            st.markdown('- Specific Disorder - Filter by specific disorders.')
+            st.markdown('- Interviewer - Filter by interviewer.')
+            st.markdown('- Subject_id - Filter by subject ID.')
+        elif filter_type == 'Specific Disorder':
+            final_options = st.sidebar.selectbox('Which Syndrome would you like to look at?', master_db_columns)
             for i in range(44):
-                if final_options == master_db_columns[i]:
-                    refined_data = master_db[specific_disorder_names[i]].dropna(axis = 0)
-                    column_list = refined_data.tolist()
-                    interview_list = filtered_full_db.loc[column_list, 'scid_interviewername']
-                    interview_list = interview_list.reset_index()
-                    st.write('Table of subjects and their interviewer:')
-                    st.write(interview_list)
-                    csv = convert_df(interview_list)
-                    st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and interviewers.csv', mime= 'text/csv')
-                    st.write("Interviewer Count:")
-                    st.write(interview_list['scid_interviewername'].value_counts())
-        specific_items = st.sidebar.checkbox('See the Specific discrepancy?')
-        if specific_items:
-            for i in range(44):
-                if final_options == master_db_columns[i]:
-                    if master_db_columns[i] in adhd_list:
-                        lifetime_column = dash_easy_dict.get(master_db_columns[i])
-                        refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
-                        subject_id_list = refined_db.tolist()
-                        desired_data = joined_db.loc[subject_id_list, [lifetime_column, *adhd_list, direction_columns[i]]]
-                        st.write('Table below shows first the diagnosis found within the module and second column is from the Patient information page.')
-                        st.write('The ADHD diagnosis column on the far left was created using scid_k29 (Diagnosis) and either scid_k13 (hyperactive threshold) or scid_k23 (inattentive threhsold).')
-                        st.write('''Direction columns indicates the direction of the discrepancy. If Patient Information is listed that means that a diagnosis
-                        was found in the SCID but not on the PI. The reverse is true if SCID is listed.''')
-                        st.write(desired_data)
-                        csv = convert_df(desired_data)
-                        st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
-                    elif master_db_columns[i] in normal_dash_list:
-                        lifetime_column = dash_dict.get(master_db_columns[i])
-                        refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
-                        subject_id_list = refined_db.tolist()
-                        desired_data = joined_db.loc[subject_id_list, [lifetime_column, [master_db_columns[i], direction_columns[i]]]]
-                        st.write('Table below shows first the "Lifetime Diagnosis" which is the diagnosis found within the module and second the name of the disorder which is the information from the Patient information page.')
-                        st.write(desired_data)
-                        csv = convert_df(desired_data)
-                        st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
-                    else:
-                        vumc_column = dash_easy_dict.get(master_db_columns[i])
-                        refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
-                        subject_id_list = refined_db.tolist()
-                        desired_data = joined_db.loc[subject_id_list, [vumc_column, master_db_columns[i], direction_columns[i]]]
-                        st.write('Table below shows first the diagnosis found within the module and second the name of the disorder which was found in the Patient Information page.')
-                        st.write('The actual scid variable name can be found in the VUMC Crosswalk which you can look at if you click the "Individual Data Files" Checkbox.')
-                        st.write(desired_data)
-                        csv = convert_df(desired_data)
-                        st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+                    if final_options == master_db_columns[i]:
+                        st.markdown('# Data Outputs')
+                        st.markdown('***')
+                        st.markdown(f'## {master_db_columns[i]}')
+                        st.markdown(f'Table of Subject IDs that have a discrepancy with **{master_db_columns[i]}**')
+                        data = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                        st.write(data)
+                        st.write("The number of discrepant subjects is", len(data.index))
+                        csv = convert_df(data)
+                        st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids.csv', mime= 'text/csv')
+            interviewer = st.sidebar.checkbox('See Interviewer?')
+            specific_items = st.sidebar.checkbox('See the Specific discrepancy?')
+            if specific_items:
+                if interviewer:
+                    for i in range(44):
+                        if final_options == master_db_columns[i]:
+                            if master_db_columns[i] in adhd_list:
+                                lifetime_column = dash_easy_dict.get(master_db_columns[i])
+                                refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                                subject_id_list = refined_db.tolist()
+                                interviewer_columns = filtered_full_db.loc[subject_id_list, 'scid_interviewername']
+                                desired_data = joined_db.loc[subject_id_list, [lifetime_column, *adhd_list, direction_columns[i]]]
+                                final_data = pd.concat([interviewer_columns, desired_data], axis =1)
+                                st.write('Table below shows first the diagnosis found within the module and second column is from the Patient information page.')
+                                st.write('The ADHD diagnosis column on the far left was created using scid_k29 (Diagnosis) and either scid_k13 (hyperactive threshold) or scid_k23 (inattentive threhsold).')
+                                st.write('''Direction columns indicates the direction of the discrepancy. If Patient Information is listed that means that a diagnosis
+                                was found in the SCID but not on the PI. The reverse is true if SCID is listed.''')
+                                st.write(final_data)
+                                csv = convert_df(final_data)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+                                st.write("Interviewer Count:")
+                                interviewer_columns = interviewer_columns.reset_index()
+                                st.write(interviewer_columns['scid_interviewername'].value_counts())
+                            elif master_db_columns[i] in normal_dash_list:
+                                lifetime_column = dash_dict.get(master_db_columns[i])
+                                refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                                subject_id_list = refined_db.tolist()
+                                interviewer_columns = filtered_full_db.loc[subject_id_list, 'scid_interviewername']
+                                desired_data = joined_db.loc[subject_id_list, [lifetime_column, master_db_columns[i], direction_columns[i]]]
+                                final_data = pd.concat([interviewer_columns, desired_data], axis =1)
+                                st.write('Table below shows first the "Lifetime Diagnosis" which is the diagnosis found within the module and second the name of the disorder which is the information from the Patient information page.')
+                                st.write(final_data)
+                                csv = convert_df(final_data)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+                                st.write("Interviewer Count:")
+                                interviewer_columns = interviewer_columns.reset_index()
+                                st.write(interviewer_columns['scid_interviewername'].value_counts())
+                            else:
+                                vumc_column = dash_easy_dict.get(master_db_columns[i])
+                                refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                                subject_id_list = refined_db.tolist()
+                                interviewer_columns = filtered_full_db.loc[subject_id_list, 'scid_interviewername']
+                                desired_data = joined_db.loc[subject_id_list, [vumc_column, master_db_columns[i], direction_columns[i]]]
+                                final_data = pd.concat([interviewer_columns, desired_data], axis =1)
+                                st.write('Table below shows first the diagnosis found within the module and second the name of the disorder which was found in the Patient Information page.')
+                                st.write('The actual scid variable name can be found in the VUMC Crosswalk which you can look at if you click the "Individual Data Files" Checkbox.')
+                                st.write(final_data)
+                                csv = convert_df(final_data)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+                                st.write("Interviewer Count:")
+                                interviewer_columns = interviewer_columns.reset_index()
+                                st.write(interviewer_columns['scid_interviewername'].value_counts())
+                else:
+                    for i in range(44):
+                        if final_options == master_db_columns[i]:
+                            if master_db_columns[i] in adhd_list:
+                                lifetime_column = dash_easy_dict.get(master_db_columns[i])
+                                refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                                subject_id_list = refined_db.tolist()
+                                desired_data = joined_db.loc[subject_id_list, [lifetime_column, *adhd_list, direction_columns[i]]]
+                                st.write('Table below shows first the diagnosis found within the module and second column is from the Patient information page.')
+                                st.write('The ADHD diagnosis column on the far left was created using scid_k29 (Diagnosis) and either scid_k13 (hyperactive threshold) or scid_k23 (inattentive threhsold).')
+                                st.write('''Direction columns indicates the direction of the discrepancy. If Patient Information is listed that means that a diagnosis
+                                was found in the SCID but not on the PI. The reverse is true if SCID is listed.''')
+                                st.write(desired_data)
+                                csv = convert_df(desired_data)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+                            elif master_db_columns[i] in normal_dash_list:
+                                lifetime_column = dash_dict.get(master_db_columns[i])
+                                refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                                subject_id_list = refined_db.tolist()
+                                desired_data = joined_db.loc[subject_id_list, [lifetime_column, master_db_columns[i], direction_columns[i]]]
+                                st.write('Table below shows first the "Lifetime Diagnosis" which is the diagnosis found within the module and second the name of the disorder which is the information from the Patient information page.')
+                                st.write(desired_data)
+                                csv = convert_df(desired_data)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+                            else:
+                                vumc_column = dash_easy_dict.get(master_db_columns[i])
+                                refined_db = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                                subject_id_list = refined_db.tolist()
+                                desired_data = joined_db.loc[subject_id_list, [vumc_column, master_db_columns[i], direction_columns[i]]]
+                                st.write('Table below shows first the diagnosis found within the module and second the name of the disorder which was found in the Patient Information page.')
+                                st.write('The actual scid variable name can be found in the VUMC Crosswalk which you can look at if you click the "Individual Data Files" Checkbox.')
+                                st.write(desired_data)
+                                csv = convert_df(desired_data)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and discrepancies.csv', mime= 'text/csv')
+            if not specific_items:
+                if interviewer:
+                    for i in range (44):
+                        if final_options == master_db_columns[i]:
+                            refined_data = master_db[specific_disorder_names[i]].dropna(axis = 0)
+                            column_list = refined_data.tolist()
+                            interview_list = filtered_full_db.loc[column_list, 'scid_interviewername']
+                            interview_list = interview_list.reset_index()
+                            st.write('Table of subjects and their interviewer:')
+                            st.write(interview_list)
+                            csv = convert_df(interview_list)
+                            st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{master_db_columns[i]} ids and interviewers.csv', mime= 'text/csv')
+                            st.write("Interviewer Count:")
+                            st.write(interview_list['scid_interviewername'].value_counts())
+        elif filter_type == 'Interviewer':
+            count = 0
+            subject_id_list = []
+            columns = master_db.columns.tolist()
+            while count < len(columns):
+                subject_id_list.append(master_db[columns[count]].values)
+                count += 1
+            subject_id_list_1 = [x for x in subject_id_list if str(x) != None]
+            flat_list = [item for sublist in subject_id_list_1 for item in sublist]
+            cleaned_flat_list = [x for x in flat_list if x != None]
+            only_wanted_ids = []
+            for x in cleaned_flat_list:
+                if x not in only_wanted_ids:
+                    only_wanted_ids.append(x)
+            Interviewer_data = filtered_full_db.loc[only_wanted_ids, "scid_interviewername"]
+            refined_data_2 = joined_db.loc[only_wanted_ids, :]
+            data = pd.concat([Interviewer_data, refined_data_2.iloc[:, 21:]], axis=1)
+            interviewer_list = data['scid_interviewername'].unique()
+            specific_interviewer = st.sidebar.selectbox('Which interviewer would you like to look like?', ['', *interviewer_list])
+            specific_disorders = st.sidebar.checkbox('Look at Specific Disorders')
+            if specific_interviewer == '':
+                st.markdown('---')
+                st.markdown('## Please choose an interviewer to get started.')
+                interviewer_num = []
+                for x in interviewer_list:
+                    number = data[data['scid_interviewername'] == x].index
+                    interviewer_num.append(len(number))
+                int_num_dict = {interviewer_list[i]:interviewer_num[i] for i in range(len(interviewer_list))}
+                int_num_db = pd.DataFrame.from_dict(int_num_dict, orient= 'index')
+                st.write(int_num_db)
+            elif specific_interviewer != '':
+                for i in range(len(interviewer_list)):
+                    if specific_interviewer == interviewer_list[i]:
+                        st.markdown('# Data Outputs')
+                        st.markdown('***')
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            name = str(interviewer_list[i])
+                            name = name.split(',')
+                            name = name[1]
+                            desired_db = data[data['scid_interviewername'] == interviewer_list[i]]
+                            st.markdown(f'List of Discrepant Subjects for {name} :')
+                            st.write(desired_db.index)
+                            st.write('Number of Discrepant Subjects:', len(desired_db.index))
+                        if specific_disorders:
+                            with col2:
+                                column_list_spec = desired_db.columns.tolist()
+                                desired_column_list = column_list_spec[96:140]
+                                disorder_list = []
+                                filter_db = desired_db.loc[:, desired_column_list]
+                                Disorders = filter_db.apply(lambda row: row[row != 'Identical'].index.tolist(), axis =1)
+                                new_Disorders = Disorders.to_frame()
+                                new_Disorders = new_Disorders.rename(columns = {0:'Discrepant Syndromes'})
+                                st.write('Table of discrepant subjects and which syndromes are discrepant.')
+                                st.write(new_Disorders)
+                                csv = convert_df(new_Disorders)
+                                st.download_button(label = 'Download Data as a CSV', data = csv, file_name = f'{interviewer_list[i]} subject discrepancies.csv', mime= 'text/csv')
 
