@@ -19,7 +19,7 @@ if data_file is not None:
 if data_file is not None:
     full_db = pd.read_csv(data_file, index_col=['subject_id'])
     filtered_full_db_1 = full_db[(full_db['scid_iscomplete'] == 'Yes') & (full_db['dx1'] != 47)]
-    filtered_full_db = filtered_full_db_1.iloc[:770, :]
+    filtered_full_db = filtered_full_db_1.loc[:'R110381-21', :].iloc[:-1] # This is to exclude the reliability subjects
     vumc_item_syn_db = pd.read_excel(vumc_item_syn_url)
     crosswalk_db = pd.read_excel(RC_crosswalk_url)
 
